@@ -1,0 +1,1 @@
+# gocept.recipe.bowerstaticbundler

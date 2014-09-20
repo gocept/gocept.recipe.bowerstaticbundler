@@ -1,0 +1,12 @@
+syntax: glob
+
+parts/
+develop-eggs/
+bin/
+.DS_Store
+.cache
+.installed.cfg
+.mr.developer.cfg
+*.pyc
+*.egg-info/
+*.sqlite
