@@ -10,33 +10,45 @@ setup(
     version='0.1.0.dev0',
     url='https://vcs.verdi4you.de/gocept.recipe.bowerstaticbundler',
     license='GPL',
-    description='XXX',
-    author='union.cms developers',
-    author_email='dev@unioncms.org',
+    description='Minifies and bundles JS and CSS files included with '
+                'bowerstatic.',
+    author='gocept gmbh & co. kg',
+    author_email='mail@gocept.org',
     long_description=(read('README.rst')
-                      + '\n\n' +
-                      'Detailed Documentation\n'
-                      '**********************'
                       + '\n\n' +
                       read('CHANGES.rst')
                       ),
     classifiers=[
-        'Environment :: Web Environment',
-        'Framework :: Zope2',
-        'Framework :: Zope3',
-        'License :: OSI Approved :: Gnu public license',
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console',
+        'Framework :: Buildout',
+        'Framework :: Buildout :: Recipe',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved',
+        'License :: OSI Approved :: Zope Public License',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Internet :: WWW/HTTP :: Site Management',
-        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Topic :: Software Development :: Build Tools',
     ],
-    keywords='union.cms zope zope2 zope3',
+    keywords='bower bowerstatic minify bundle css js javascript buildout '
+             'recipe',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    namespace_packages=['gocept'],
+    namespace_packages=['gocept', 'gocept.recipe'],
     include_package_data=True,
     install_requires=[
         'setuptools',
+        'zc.buildout',
+        'rcssmin',
+        'rjsmin',
     ],
+    entry_points="""
+      [zc.buildout]
+      default = gocept.recipe.bowerstaticbundler:Recipe
+      """,
     zip_safe=False,
 )
