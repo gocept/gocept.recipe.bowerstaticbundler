@@ -83,7 +83,9 @@ class Recipe(object):
             includer = collection.includer(environ)
             for component_name, component in collection._components.items():
                 includer(component_name)
-        inclusions = environ['bowerstatic.inclusions']
+        inclusions = environ.setdefault(
+            'bowerstatic.inclusions',
+            importlib.import_module('bowerstatic.includer').Inclusions())
         topological_sort = importlib.import_module(
             'bowerstatic.toposort').topological_sort
         inclusions = topological_sort(

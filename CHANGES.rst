@@ -8,6 +8,8 @@ CHANGES
 - Fixed handling of the ``pkg_resources`` working set when collecting
   resources from eggs.
 
+- Make sure recipe does not brake when there are no resources to bundle.
+
 
 1.0.1 (2014-09-20)
 ==================
