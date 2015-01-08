@@ -83,16 +83,28 @@ class Recipe(object):
             includer = collection.includer(environ)
             for component_name, component in collection._components.items():
                 includer(component_name)
-        inclusions = environ.setdefault(
-            'bowerstatic.inclusions',
-            importlib.import_module('bowerstatic.includer').Inclusions())
-        topological_sort = importlib.import_module(
-            'bowerstatic.toposort').topological_sort
-        inclusions = topological_sort(
+
+        paths_by_type = self.get_paths_by_type(bower, environ)
+        version, bundles = self.create_bundles_by_type(paths_by_type)
+
+        # Write .bower.json file
+        bjson = BOWER_JSON.copy()
+        bjson['main'] = bundles
+        bjson['version'] = version
+        self.write_bower_json(bjson)
+
+    def get_paths_by_type(self, bower, environ):
+        """Return file paths to assets separated by type, i.e. CSS, JS etc."""
+        inclusions = environ.get('bowerstatic.inclusions')
+        if inclusions is None:
+            return {}
+
+        import bowerstatic.toposort
+        inclusions = bowerstatic.toposort.topological_sort(
             inclusions._inclusions,
             lambda inclusion: inclusion.dependencies())
+
         paths_by_type = {}
-        bundle_names = []
         for inclusion in inclusions:
             resource = inclusion.resource
             component = resource.component
@@ -102,8 +114,17 @@ class Recipe(object):
             paths_by_type.setdefault(ext, []).append(
                 bower.get_filename(collection.name, component.name,
                                    component.version, resource.file_path))
-        # Get file contents, minify it and bundle all together
+        return paths_by_type
+
+    def create_bundles_by_type(self, paths_by_type):
+        """Get file content, minify it and bundle by type, i.e. JS, CSS etc.
+
+        Will calculate a version number by generating the hash for the combined
+        content of all bundles.
+
+        """
         m = md5.new()
+        bundle_names = []
         for type_, paths in paths_by_type.items():
             bundle_name = 'bundle%s' % type_
             with open(os.path.join(
@@ -113,13 +134,8 @@ class Recipe(object):
                         content = file_.read()
                         if type_ in MINIFIERS:
                             content = MINIFIERS[type_](content)
-                        m.update(content)
+                        m.update(content)  # to generate version number
                         bundle.write(content)
                         bundle.write('\n')
             bundle_names.append(bundle_name)
-        # Write .bower.json file
-        version = m.hexdigest()
-        bjson = BOWER_JSON.copy()
-        bjson['main'] = bundle_names
-        bjson['version'] = version
-        self.write_bower_json(bjson)
+        return m.hexdigest(), bundle_names
