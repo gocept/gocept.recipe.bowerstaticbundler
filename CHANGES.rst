@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-1.0.2 (unreleased)
+1.0.2 (2015-01-08)
 ==================
 
 - Fixed handling of the ``pkg_resources`` working set when collecting
