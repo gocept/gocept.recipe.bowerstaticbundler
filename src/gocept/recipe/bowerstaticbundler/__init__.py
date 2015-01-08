@@ -66,7 +66,8 @@ class Recipe(object):
             path=[self.develop_eggs_directory],
             newest=self.newest)
         sys.path[0:0] = ws.entries
-        pkg_resources.working_set = ws
+        for entry in ws.entries:
+            pkg_resources.working_set.add_entry(entry)
         # Import bowerstatic to calculate resources and their dependencies
         for package in self.modules:
             importlib.import_module(package)

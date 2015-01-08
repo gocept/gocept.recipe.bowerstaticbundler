@@ -5,7 +5,8 @@ CHANGES
 1.0.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Fixed handling of the ``pkg_resources`` working set when collecting
+  resources from eggs.
 
 
 1.0.1 (2014-09-20)
