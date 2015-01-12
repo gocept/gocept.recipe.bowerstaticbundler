@@ -5,7 +5,7 @@ CHANGES
 1.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Prevent error on update if `bowerstatic_bundle` directory is missing.
 
 
 1.1 (2015-01-12)

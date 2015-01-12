@@ -48,15 +48,19 @@ class Recipe(object):
         with open(os.path.join(self.target_dir, '.bower.json'), 'w') as bjson:
             bjson.write(json.dumps(dict))
 
-    def install(self):
+    def assure_target_dir(self):
         if not os.path.exists(self.target_dir):
             os.makedirs(self.target_dir)
+
+    def install(self):
+        self.assure_target_dir()
         # Write an "empty" .bower.json file as bowerstatic expects that
         self.write_bower_json(BOWER_JSON)
         self.update()
         return self.target_dir
 
     def update(self):
+        self.assure_target_dir()
         # Setup paths end environment
         for key, value in self.environment.items():
             os.environ[key] = value
