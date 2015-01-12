@@ -2,8 +2,8 @@
 CHANGES
 =======
 
-1.0.3 (unreleased)
-==================
+1.1 (2015-01-12)
+================
 
 - Symlink additional resources references in CSS files (images, fonts, …) into
   the bundle and point minified CSS to these symlinks.
