@@ -2,8 +2,8 @@
 CHANGES
 =======
 
-1.2 (unreleased)
-================
+1.1.1 (2015-01-12)
+==================
 
 - Prevent error on update if `bowerstatic_bundle` directory is missing.
 
