@@ -7,7 +7,7 @@ def read(*rnames):
 
 setup(
     name='gocept.recipe.bowerstaticbundler',
-    version='1.1.1',
+    version='1.1.2.dev0',
     url='https://bitbucket.org/gocept/gocept.recipe.bowerstaticbundler',
     license='GPL',
     description='Minifies and bundles JS and CSS files included with '
