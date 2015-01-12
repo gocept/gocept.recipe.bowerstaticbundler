@@ -1,18 +1,20 @@
 import importlib
 import json
+import md5
 import os
 import pkg_resources
+import rcssmin
+import re
+import rjsmin
 import sys
 import zc.buildout.easy_install
-import md5
-import rcssmin
-import rjsmin
 
 BUNDLE_DIR_NAME = 'bowerstatic_bundle'
 BOWER_JSON = {
     "name": BUNDLE_DIR_NAME,
     "version": "0.1",
 }
+CSS_URL_REGEXP = re.compile("url\((.*?)\)")
 MINIFIERS = {
     '.js': rjsmin.jsmin,
     '.css': rcssmin.cssmin,
@@ -132,6 +134,8 @@ class Recipe(object):
                 for path in paths:
                     with open(path) as file_:
                         content = file_.read()
+                        if type_ == '.css':
+                            content = self.copy_other_resources(content, path)
                         if type_ in MINIFIERS:
                             content = MINIFIERS[type_](content)
                         m.update(content)  # to generate version number
@@ -139,3 +143,28 @@ class Recipe(object):
                         bundle.write('\n')
             bundle_names.append(bundle_name)
         return m.hexdigest(), bundle_names
+
+    def copy_other_resources(self, content, path):
+        """Make sure that resources linked in the contents of CSS files are
+           accessable in the bundle.
+
+           XXX: Name clashes are ignored, the last file wins right now.
+           """
+        additional_files = CSS_URL_REGEXP.findall(content)
+        for filename in additional_files:
+            filename = self._sanitize_filename(filename)
+            target = os.path.join(self.target_dir, os.path.basename(filename))
+            if os.path.lexists(target):
+                os.unlink(target)
+            os.symlink(os.path.join(os.path.dirname(path), filename), target)
+            content = content.replace(filename, os.path.basename(target), 1)
+        return content
+
+    def _sanitize_filename(self, filename):
+        if filename.startswith('"') or filename.startswith("'"):
+            filename = filename[1:-1]
+        if '?' in filename:
+            filename = filename.split('?')[0]
+        if '#' in filename:
+            filename = filename.split('#')[0]
+        return filename
