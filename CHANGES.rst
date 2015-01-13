@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-1.1.2 (unreleased)
+1.2.0 (2015-01-13)
 ==================
 
 - Copy all template files into the bundle dir, rather building one huge
