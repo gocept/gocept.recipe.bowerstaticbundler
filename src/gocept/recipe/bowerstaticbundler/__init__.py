@@ -139,7 +139,7 @@ class Recipe(object):
                     with open(path) as file_:
                         content = file_.read()
                         if type_ == '.css':
-                            content = self.copy_other_resources(content, path)
+                            content = self.copy_linked_resources(content, path)
                         if type_ in MINIFIERS:
                             content = MINIFIERS[type_](content)
                         m.update(content)  # to generate version number
@@ -148,7 +148,7 @@ class Recipe(object):
             bundle_names.append(bundle_name)
         return m.hexdigest(), bundle_names
 
-    def copy_other_resources(self, content, path):
+    def copy_linked_resources(self, content, path):
         """Make sure that resources linked in the contents of CSS files are
            accessable in the bundle.
 
