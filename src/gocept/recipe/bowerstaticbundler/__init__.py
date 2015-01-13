@@ -6,6 +6,7 @@ import pkg_resources
 import rcssmin
 import re
 import rjsmin
+import shutil
 import sys
 import zc.buildout.easy_install
 
@@ -19,6 +20,8 @@ MINIFIERS = {
     '.js': rjsmin.jsmin,
     '.css': rcssmin.cssmin,
 }
+BUNDLE_EXTENSIONS = ['.js', '.css']
+RESOURCE_EXTENSIONS = ['.pt']
 
 
 class Recipe(object):
@@ -91,11 +94,12 @@ class Recipe(object):
                 includer(component_name)
 
         paths_by_type = self.get_paths_by_type(bower, environ)
+        resources = self.copy_resources_by_type(paths_by_type)
         version, bundles = self.create_bundles_by_type(paths_by_type)
 
         # Write .bower.json file
         bjson = BOWER_JSON.copy()
-        bjson['main'] = bundles
+        bjson['main'] = resources + bundles
         bjson['version'] = version
         self.write_bower_json(bjson)
 
@@ -128,10 +132,14 @@ class Recipe(object):
         Will calculate a version number by generating the hash for the combined
         content of all bundles.
 
+        Will only bundle files whose extension is present in BUNDLE_EXTENSIONS.
+
         """
         m = md5.new()
         bundle_names = []
         for type_, paths in paths_by_type.items():
+            if type_ not in BUNDLE_EXTENSIONS:
+                continue
             bundle_name = 'bundle%s' % type_
             with open(os.path.join(
                     self.target_dir, bundle_name), 'w') as bundle:
@@ -163,6 +171,25 @@ class Recipe(object):
             os.symlink(os.path.join(os.path.dirname(path), filename), target)
             content = content.replace(filename, os.path.basename(target), 1)
         return content
+
+    def copy_resources_by_type(self, paths_by_type):
+        """Copy static resources like images or templates into the bundle dir.
+
+        Will only copy resources whose extension is in RESOURCE_EXTENSIONS.
+
+        XXX: Name clashes are ignored, the last file wins right now.
+
+        """
+        resources = []
+        for type_, paths in paths_by_type.items():
+            if type_ not in RESOURCE_EXTENSIONS:
+                continue
+            for path in paths:
+                filename = os.path.basename(path)
+                destination = os.path.join(self.target_dir, filename)
+                shutil.copyfile(path, destination)
+                resources.append(filename)
+        return resources
 
     def _sanitize_filename(self, filename):
         if filename.startswith('"') or filename.startswith("'"):

@@ -5,7 +5,8 @@ CHANGES
 1.1.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Copy all template files into the bundle dir, rather building one huge
+  bundle.pt template
 
 
 1.1.1 (2015-01-12)
