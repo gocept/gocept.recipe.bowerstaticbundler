@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-1.2.1 (unreleased)
+1.2.1 (2015-01-14)
 ==================
 
 - Also copy images into the bundle dir, which will be rendered as the fav icon.
