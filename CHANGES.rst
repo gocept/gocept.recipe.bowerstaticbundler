@@ -9,6 +9,9 @@ CHANGES
 
 - Make generated .bower.json file more readable by adding newlines and indent.
 
+- When copying resources, create a separate directory for each package to
+  reduce probability of name clashes.
+
 
 1.2.0 (2015-01-13)
 ==================

@@ -93,9 +93,9 @@ class Recipe(object):
             for component_name, component in collection._components.items():
                 includer(component_name)
 
-        paths_by_type = self.get_paths_by_type(bower, environ)
-        resources = self.copy_resources_by_type(paths_by_type)
-        version, bundles = self.create_bundles_by_type(paths_by_type)
+        resources_by_type = self.get_resources_by_type(bower, environ)
+        resources = self.copy_resources_by_type(resources_by_type)
+        version, bundles = self.create_bundles_by_type(resources_by_type)
 
         # Write .bower.json file
         bjson = BOWER_JSON.copy()
@@ -103,8 +103,17 @@ class Recipe(object):
         bjson['version'] = version
         self.write_bower_json(bjson)
 
-    def get_paths_by_type(self, bower, environ):
-        """Return file paths to assets separated by type, i.e. CSS, JS etc."""
+    def get_resources_by_type(self, bower, environ):
+        """Return file paths to assets separated by type, i.e. CSS, JS etc.
+
+        Example structure of the returned dict:
+
+        {'.js': [
+            {'package': jquery', 'path': /path/to/jquery.js'},
+            {'package': gocept.jsform', 'path': /path/to/jsform.js'}
+        ]}
+
+        """
         inclusions = environ.get('bowerstatic.inclusions')
         if inclusions is None:
             return {}
@@ -114,19 +123,23 @@ class Recipe(object):
             inclusions._inclusions,
             lambda inclusion: inclusion.dependencies())
 
-        paths_by_type = {}
+        resources_by_type = {}
         for inclusion in inclusions:
             resource = inclusion.resource
             component = resource.component
             collection = component.component_collection
 
             ext = resource.ext
-            paths_by_type.setdefault(ext, []).append(
-                bower.get_filename(collection.name, component.name,
-                                   component.version, resource.file_path))
-        return paths_by_type
+            path = bower.get_filename(
+                collection.name, component.name,
+                component.version, resource.file_path)
+            resources_by_type.setdefault(ext, []).append({
+                'package': component.name,
+                'path': path
+            })
+        return resources_by_type
 
-    def create_bundles_by_type(self, paths_by_type):
+    def create_bundles_by_type(self, resources_by_type):
         """Get file content, minify it and bundle by type, i.e. JS, CSS etc.
 
         Will calculate a version number by generating the hash for the combined
@@ -137,19 +150,20 @@ class Recipe(object):
         """
         m = md5.new()
         bundle_names = []
-        for type_, paths in paths_by_type.items():
-            if type_ not in BUNDLE_EXTENSIONS:
+        for ext, resources in resources_by_type.items():
+            if ext not in BUNDLE_EXTENSIONS:
                 continue
-            bundle_name = 'bundle%s' % type_
+            bundle_name = 'bundle%s' % ext
             with open(os.path.join(
                     self.target_dir, bundle_name), 'w') as bundle:
-                for path in paths:
-                    with open(path) as file_:
+                for resource in resources:
+                    with open(resource['path']) as file_:
                         content = file_.read()
-                        if type_ == '.css':
-                            content = self.copy_linked_resources(content, path)
-                        if type_ in MINIFIERS:
-                            content = MINIFIERS[type_](content)
+                        if ext == '.css':
+                            content = self.copy_linked_resources(
+                                content, resource['path'])
+                        if ext in MINIFIERS:
+                            content = MINIFIERS[ext](content)
                         m.update(content)  # to generate version number
                         bundle.write(content)
                         bundle.write('\n')
@@ -172,7 +186,7 @@ class Recipe(object):
             content = content.replace(filename, os.path.basename(target), 1)
         return content
 
-    def copy_resources_by_type(self, paths_by_type):
+    def copy_resources_by_type(self, resources_by_type):
         """Copy static resources like images or templates into the bundle dir.
 
         Will only copy resources whose extension is in RESOURCE_EXTENSIONS.
@@ -180,16 +194,26 @@ class Recipe(object):
         XXX: Name clashes are ignored, the last file wins right now.
 
         """
-        resources = []
-        for type_, paths in paths_by_type.items():
-            if type_ not in RESOURCE_EXTENSIONS:
+        copied_resources = []
+        for ext, resources in resources_by_type.items():
+            if ext not in RESOURCE_EXTENSIONS:
                 continue
-            for path in paths:
-                filename = os.path.basename(path)
-                destination = os.path.join(self.target_dir, filename)
-                shutil.copyfile(path, destination)
-                resources.append(filename)
-        return resources
+            for resource in resources:
+                # create namespace directory for package
+                target_dir = os.path.join(self.target_dir, resource['package'])
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
+
+                # copy file into namespace directory inside the bundle dir
+                filename = os.path.basename(resource['path'])
+                destination = os.path.join(target_dir, filename)
+                shutil.copyfile(resource['path'], destination)
+
+                # add relative file path to copied resources
+                copied_resources.append(os.path.join(
+                    resource['package'], filename))
+
+        return copied_resources
 
     def _sanitize_filename(self, filename):
         if filename.startswith('"') or filename.startswith("'"):
