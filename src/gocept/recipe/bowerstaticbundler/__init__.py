@@ -21,7 +21,7 @@ MINIFIERS = {
     '.css': rcssmin.cssmin,
 }
 BUNDLE_EXTENSIONS = ['.js', '.css']
-RESOURCE_EXTENSIONS = ['.pt']
+RESOURCE_EXTENSIONS = ['.pt', '.ico', '.gif', '.png', '.jpg']
 
 
 class Recipe(object):
