@@ -49,7 +49,7 @@ class Recipe(object):
 
     def write_bower_json(self, dict):
         with open(os.path.join(self.target_dir, '.bower.json'), 'w') as bjson:
-            bjson.write(json.dumps(dict))
+            bjson.write(json.dumps(dict, indent=2, separators=(',', ': ')))
 
     def assure_target_dir(self):
         if not os.path.exists(self.target_dir):

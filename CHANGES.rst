@@ -7,6 +7,8 @@ CHANGES
 
 - Also copy images into the bundle dir, which will be rendered as the fav icon.
 
+- Make generated .bower.json file more readable by adding newlines and indent.
+
 
 1.2.0 (2015-01-13)
 ==================
