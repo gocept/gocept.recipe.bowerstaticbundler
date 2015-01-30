@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-1.2.2 (unreleased)
+1.2.2 (2015-01-30)
 ==================
 
 - Support for multiple local components.
