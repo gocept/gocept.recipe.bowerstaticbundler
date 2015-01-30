@@ -11,10 +11,6 @@ import sys
 import zc.buildout.easy_install
 
 BUNDLE_DIR_NAME = 'bowerstatic_bundle'
-BOWER_JSON = {
-    "name": BUNDLE_DIR_NAME,
-    "version": "0.1",
-}
 CSS_URL_REGEXP = re.compile("url\((.*?)\)")
 MINIFIERS = {
     '.js': rjsmin.jsmin,
@@ -32,8 +28,9 @@ class Recipe(object):
         self.eggs = self.options.get('eggs', '').splitlines()
         self.bower = self.options['bower']
         self.eggs_directory = buildout['buildout']['eggs-directory']
+        self._target_dir = options['target_dir']
+        self._current_component_name = ''
         links = buildout['buildout'].get('find-links', ())
-        self.target_dir = os.path.join(options['target_dir'], BUNDLE_DIR_NAME)
         if links:
             links = links.split()
         self.links = links
@@ -47,6 +44,10 @@ class Recipe(object):
         if environment_name is not None:
             self.environment = buildout[environment_name]
 
+    @property
+    def target_dir(self):
+        return os.path.join(self._target_dir, self._current_component_name)
+
     def write_bower_json(self, dict):
         with open(os.path.join(self.target_dir, '.bower.json'), 'w') as bjson:
             bjson.write(json.dumps(dict, indent=2, separators=(',', ': ')))
@@ -56,14 +57,9 @@ class Recipe(object):
             os.makedirs(self.target_dir)
 
     def install(self):
-        self.assure_target_dir()
-        # Write an "empty" .bower.json file as bowerstatic expects that
-        self.write_bower_json(BOWER_JSON)
         self.update()
-        return self.target_dir
 
     def update(self):
-        self.assure_target_dir()
         # Setup paths end environment
         for key, value in self.environment.items():
             os.environ[key] = value
@@ -82,26 +78,31 @@ class Recipe(object):
             importlib.import_module(package)
         bower_module, bower_attr = self.bower.split(':')
         bower = getattr(importlib.import_module(bower_module), bower_attr)
-        environ = {}
         for bower_components_name, collection in (
                 bower._component_collections.items()):
             if collection.fallback_collection is None:
                 # This is not a local collection
                 # XXX What if no local collection is found?!
                 continue
-            includer = collection.includer(environ)
             for component_name, component in collection._components.items():
+                # Build a bundle for each local component_name
+                self._current_component_name = (
+                    BUNDLE_DIR_NAME + '_' + component_name.replace('.', '_'))
+                self.assure_target_dir()
+                environ = {}
+                includer = collection.includer(environ)
                 includer(component_name)
 
-        resources_by_type = self.get_resources_by_type(bower, environ)
-        resources = self.copy_resources_by_type(resources_by_type)
-        version, bundles = self.create_bundles_by_type(resources_by_type)
+                resources_by_type = self.get_resources_by_type(bower, environ)
+                resources = self.copy_resources_by_type(resources_by_type)
+                version, bundles = self.create_bundles_by_type(
+                    resources_by_type)
 
-        # Write .bower.json file
-        bjson = BOWER_JSON.copy()
-        bjson['main'] = resources + bundles
-        bjson['version'] = version
-        self.write_bower_json(bjson)
+                # Write .bower.json file
+                self.write_bower_json({
+                    'name': self._current_component_name,
+                    'main': resources + bundles,
+                    'version': version})
 
     def get_resources_by_type(self, bower, environ):
         """Return file paths to assets separated by type, i.e. CSS, JS etc.
@@ -179,7 +180,8 @@ class Recipe(object):
         additional_files = CSS_URL_REGEXP.findall(content)
         for filename in additional_files:
             filename = self._sanitize_filename(filename)
-            target = os.path.join(self.target_dir, os.path.basename(filename))
+            target = os.path.join(
+                self.target_dir, os.path.basename(filename)).encode('utf-8')
             if os.path.lexists(target):
                 os.unlink(target)
             os.symlink(os.path.join(os.path.dirname(path), filename), target)

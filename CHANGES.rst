@@ -5,7 +5,7 @@ CHANGES
 1.2.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Support for multiple local components.
 
 
 1.2.1 (2015-01-14)
